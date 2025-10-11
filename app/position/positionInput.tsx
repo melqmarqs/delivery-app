@@ -1,9 +1,11 @@
+import type { InputColor } from "models/input"
+
 interface PositionInputParams {
   title: string
   description: string
   value: string
   placeholder?: string
-  color: string
+  color: InputColor
   error: boolean
   onChangeInput: (value: string) => void
   onBlur?: () => void
@@ -15,9 +17,9 @@ export function PositionInput(params: PositionInputParams) {
       <div className="grid justify-items-center">
         <label>
           enter the &nbsp;
-          <label className={`text-xl font-bold text-${params.color}-500`}>{params.title}</label>
+          <label className={`text-xl font-bold ${params.color.textColor}`}>{params.title}</label>
         </label>
-        <label className={`text-${params.color}-300/70`}>
+        <label className={`${params.color.descriptionColor}`}>
           {params.description}
         </label>
       </div>

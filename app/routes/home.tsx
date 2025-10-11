@@ -1,6 +1,6 @@
 import type { FieldValidation, PositionDetail } from "models/position";
 import { useEffect, useMemo, useState } from "react";
-import { DELIVERY_COLOR, DELIVERY_SQUARE_COLOR, DRONE_COLOR, DRONE_SQUARE_COLOR, OBJECT_COLOR, OBJECT_SQUARE_COLOR } from "utils/constants";
+import { colors } from "utils/colors";
 import { createChessboardSquares, isPositionValid } from "utils/helper";
 import { Chessboard } from "~/chessboard/chessboard";
 import { PositionInput } from "~/position/positionInput";
@@ -26,25 +26,25 @@ export default function Home() {
 
   useEffect(() => {
     if (isPositionValid(dronePosition.value))
-      updateChessboard(dronePosition.value, DRONE_SQUARE_COLOR);
+      updateChessboard(dronePosition.value, colors.droneSquare);
     else if (dronePosition.value.length === 2)
-      restoreDefaultColor(DRONE_SQUARE_COLOR);
+      restoreDefaultColor(colors.droneSquare);
 
   }, [dronePosition]);
 
   useEffect(() => {
     if (isPositionValid(objectPosition.value))
-      updateChessboard(objectPosition.value, OBJECT_SQUARE_COLOR);
+      updateChessboard(objectPosition.value, colors.objectSquare);
     else if (objectPosition.value.length === 2)
-      restoreDefaultColor(OBJECT_SQUARE_COLOR);
+      restoreDefaultColor(colors.objectSquare);
 
   }, [objectPosition]);
 
   useEffect(() => {
     if (isPositionValid(deliveryPosition.value))
-      updateChessboard(deliveryPosition.value, DELIVERY_SQUARE_COLOR);
+      updateChessboard(deliveryPosition.value, colors.deliverySquare);
     else if (deliveryPosition.value.length === 2)
-      restoreDefaultColor(DELIVERY_SQUARE_COLOR);
+      restoreDefaultColor(colors.deliverySquare);
 
   }, [deliveryPosition]);
 
@@ -83,7 +83,7 @@ export default function Home() {
             description="it is the route starting point"
             placeholder="a1"
             onChangeInput={(value) => setDronePosition({ ...dronePosition, value })}
-            color={DRONE_COLOR}
+            color={{ textColor: colors.droneText, descriptionColor: colors.droneDescription }}
             error={dronePosition.error}
             onBlur={() => setDronePosition({ ...dronePosition, error: !isPositionValid(dronePosition.value) })}
           />
@@ -94,7 +94,7 @@ export default function Home() {
             description="place where the drone is going to get the package"
             placeholder="d7"
             onChangeInput={(value) => setObjectPosition({ ...objectPosition, value })}
-            color={OBJECT_COLOR}
+            color={{ textColor: colors.objectText, descriptionColor: colors.objectDescription }}
             error={objectPosition.error}
             onBlur={() => setObjectPosition({ ...objectPosition, error: !isPositionValid(objectPosition.value) })}
           />
@@ -105,7 +105,7 @@ export default function Home() {
             description="the final step - where the drone will leave the package"
             placeholder="f4"
             onChangeInput={(value) => setDeliveryPosition({ ...deliveryPosition, value })}
-            color={DELIVERY_COLOR}
+            color={{ textColor: colors.deliveryText, descriptionColor: colors.deliveryDescription }}
             error={deliveryPosition.error}
             onBlur={() => setDeliveryPosition({ ...deliveryPosition, error: !isPositionValid(deliveryPosition.value) })}
           />
