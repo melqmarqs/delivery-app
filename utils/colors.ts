@@ -9,5 +9,8 @@ export const colors = {
 
   deliveryText: 'text-orange-500',
   deliveryDescription: 'text-orange-500/50',
-  deliverySquare: 'bg-orange-600'
+  deliverySquare: 'bg-orange-600',
+
+  firstHalfPath: 'bg-sky-300',
+  secondHalfPath: 'bg-fuchsia-300',
 }

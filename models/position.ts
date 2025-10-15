@@ -13,6 +13,7 @@ export interface RoutePositions {
 export interface PositionDetail {
   row: number;
   column: string;
+  position?: string;
   color?: string;
   defaultColor?: string;
 }

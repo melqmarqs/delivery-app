@@ -1,10 +1,13 @@
 import type { FieldValidation, PositionDetail } from "models/position";
 import { useEffect, useMemo, useState } from "react";
 import { colors } from "utils/colors";
-import { createChessboardSquares, isPositionValid } from "utils/helper";
-import { Chessboard } from "~/chessboard/chessboard";
-import { PositionInput } from "~/position/positionInput";
+import { createChessboardSquares, getFastestPath, isPositionValid, reorderPosition } from "utils/helper";
+import { Chessboard } from "components/chessboard";
+import { PositionInput } from "components/positionInput";
 import type { Route } from "./+types/home";
+import { ChessboardService } from "services/chessboardService";
+import type { ChessboardPath, Graph } from "models/chessboard";
+import { SuccessButton } from "components/successButton";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -17,7 +20,13 @@ export default function Home() {
   const [dronePosition, setDronePosition] = useState<FieldValidation>({ value: '', error: false });
   const [objectPosition, setObjectPosition] = useState<FieldValidation>({ value: '', error: false });
   const [deliveryPosition, setDeliveryPosition] = useState<FieldValidation>({ value: '', error: false });
-  const fullFilled = useMemo(() => isPositionValid(dronePosition.value) && isPositionValid(objectPosition.value) && isPositionValid(deliveryPosition.value), [dronePosition, objectPosition, deliveryPosition]);
+  const isDroneValueValid = (droneValue?: string) =>
+    isPositionValid(droneValue ?? dronePosition.value, [objectPosition.value, deliveryPosition.value]);
+  const isObjectValueValid = (objValue?: string) =>
+    isPositionValid(objValue ?? objectPosition.value, [dronePosition.value, deliveryPosition.value]);
+  const isDeliveryValueValid = (deliveryValue?: string) =>
+    isPositionValid(deliveryValue ?? deliveryPosition.value, [dronePosition.value, objectPosition.value]);
+  const fullFilled = useMemo(() => isDroneValueValid() && isObjectValueValid() && isDeliveryValueValid(), [dronePosition, objectPosition, deliveryPosition]);
 
   useEffect(() => {
     const tempChessboard = createChessboardSquares();
@@ -25,27 +34,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (isPositionValid(dronePosition.value))
-      updateChessboard(dronePosition.value, colors.droneSquare);
-    else if (dronePosition.value.length === 2)
-      restoreDefaultColor(colors.droneSquare);
-
+    if (dronePosition.value.length === 2) {
+      if (!dronePosition.error)
+        updateChessboard(dronePosition.value, colors.droneSquare);
+      else
+        restoreDefaultColor(colors.droneSquare);
+    }
   }, [dronePosition]);
 
   useEffect(() => {
-    if (isPositionValid(objectPosition.value))
-      updateChessboard(objectPosition.value, colors.objectSquare);
-    else if (objectPosition.value.length === 2)
-      restoreDefaultColor(colors.objectSquare);
-
+    if (objectPosition.value.length === 2) {
+      if (!objectPosition.error)
+        updateChessboard(objectPosition.value, colors.objectSquare);
+      else
+        restoreDefaultColor(colors.objectSquare);
+    }
   }, [objectPosition]);
 
   useEffect(() => {
-    if (isPositionValid(deliveryPosition.value))
-      updateChessboard(deliveryPosition.value, colors.deliverySquare);
-    else if (deliveryPosition.value.length === 2)
-      restoreDefaultColor(colors.deliverySquare);
-
+    if (deliveryPosition.value.length === 2) {
+      if (!deliveryPosition.error)
+        updateChessboard(deliveryPosition.value, colors.deliverySquare);
+      else
+        restoreDefaultColor(colors.deliverySquare);
+    }
   }, [deliveryPosition]);
 
   function updateChessboard(position: string, color: string) {
@@ -63,6 +75,17 @@ export default function Home() {
     setMyChessboard([...tempChessboard]);
   }
 
+  function teste(positions: string[], color: string) {
+    const tempChessboard = [...myChessboard];
+
+    tempChessboard.forEach(piece => {
+      if (positions.includes(piece.position!))
+        piece.color = color;
+    });
+
+    setMyChessboard([...tempChessboard]);
+  }
+
   function restoreDefaultColor(color: string) {
     const tempChessboard = [...myChessboard];
     tempChessboard.forEach(piece => {
@@ -71,6 +94,54 @@ export default function Home() {
     });
 
     setMyChessboard([...tempChessboard]);
+  }
+
+  async function trackTime() {
+    try {
+      let chessboardGraph: Graph | undefined = undefined;
+      chessboardGraph = JSON.parse(localStorage.getItem('chessboardGraph')!) as Graph;
+
+      if (!chessboardGraph) {
+        try {
+          const graphResp: Graph = await ChessboardService.getGraph();
+          chessboardGraph = graphResp;
+          localStorage.setItem('chessboardGraph', JSON.stringify(graphResp));
+        }
+        catch {
+          throw 'An error occurred and therefore it is not possible to complete the action.';
+        }
+      }
+
+      const droneValue = reorderPosition(dronePosition.value);
+      const objectValue = reorderPosition(objectPosition.value);
+      const deliveryValue = reorderPosition(deliveryPosition.value);
+
+      const firstHalf = getFastestPath(
+        chessboardGraph,
+        droneValue,
+        objectValue);
+
+      const firstHalfSquaresToPaint = firstHalf!.path.filter(x => ![droneValue, objectValue].includes(x));
+      teste(firstHalfSquaresToPaint, colors.firstHalfPath);
+
+      const secondHalf = getFastestPath(
+        chessboardGraph,
+        objectValue,
+        deliveryValue);
+
+      const secondHalfSquaresToPaint = secondHalf!.path.filter(x => ![objectValue, deliveryValue].includes(x));
+      teste(secondHalfSquaresToPaint, colors.secondHalfPath);
+
+      const finalPath: ChessboardPath = {
+        path: [...firstHalf?.path!, ...secondHalf?.path!],
+        distance: firstHalf?.distance! + secondHalf?.distance!
+      };
+
+      console.log('result', finalPath);
+    }
+    catch (error) {
+      alert(error);
+    }
   }
 
   return (
@@ -82,10 +153,9 @@ export default function Home() {
             value={dronePosition.value}
             description="it is the route starting point"
             placeholder="a1"
-            onChangeInput={(value) => setDronePosition({ ...dronePosition, value })}
+            onChangeInput={(value) => setDronePosition({ ...dronePosition, value, error: !isDroneValueValid(value) })}
             color={{ textColor: colors.droneText, descriptionColor: colors.droneDescription }}
             error={dronePosition.error}
-            onBlur={() => setDronePosition({ ...dronePosition, error: !isPositionValid(dronePosition.value) })}
           />
 
           <PositionInput
@@ -93,10 +163,9 @@ export default function Home() {
             value={objectPosition.value}
             description="place where the drone is going to get the package"
             placeholder="d7"
-            onChangeInput={(value) => setObjectPosition({ ...objectPosition, value })}
+            onChangeInput={(value) => setObjectPosition({ ...objectPosition, value, error: !isObjectValueValid(value) })}
             color={{ textColor: colors.objectText, descriptionColor: colors.objectDescription }}
             error={objectPosition.error}
-            onBlur={() => setObjectPosition({ ...objectPosition, error: !isPositionValid(objectPosition.value) })}
           />
 
           <PositionInput
@@ -104,10 +173,9 @@ export default function Home() {
             value={deliveryPosition.value}
             description="the final step - where the drone will leave the package"
             placeholder="f4"
-            onChangeInput={(value) => setDeliveryPosition({ ...deliveryPosition, value })}
+            onChangeInput={(value) => setDeliveryPosition({ ...deliveryPosition, value, error: !isDeliveryValueValid(value) })}
             color={{ textColor: colors.deliveryText, descriptionColor: colors.deliveryDescription }}
             error={deliveryPosition.error}
-            onBlur={() => setDeliveryPosition({ ...deliveryPosition, error: !isPositionValid(deliveryPosition.value) })}
           />
         </div>
 
@@ -117,13 +185,12 @@ export default function Home() {
       </div>
 
       <div className="w-80 h-15">
-        <button
-          className="rounded-xl border-2 size-full border-green-500 bg-green-700 disabled:bg-gray-700 disabled:border-gray-500 disabled:text-gray-400"
-          disabled={!fullFilled}
-          onClick={() => console.log('click')}
+        <SuccessButton
+          onClick={trackTime}
+          disabled={fullFilled}
         >
           Confirm route
-        </button>
+        </SuccessButton>
       </div>
     </div>
   );
