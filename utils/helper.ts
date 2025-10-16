@@ -108,3 +108,7 @@ export function getFastestPath(graph: Graph, startingPoint: string, finalPoint: 
 
   return null;
 }
+
+export function convertSecToMin(seconds: number): number {
+  return +(seconds / 60).toFixed(2)
+}

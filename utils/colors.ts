@@ -11,6 +11,6 @@ export const colors = {
   deliveryDescription: 'text-orange-500/50',
   deliverySquare: 'bg-orange-600',
 
-  firstHalfPath: 'bg-sky-300',
-  secondHalfPath: 'bg-fuchsia-300',
+  firstHalfPath: 'bg-sky-200',
+  secondHalfPath: 'bg-fuchsia-200',
 }

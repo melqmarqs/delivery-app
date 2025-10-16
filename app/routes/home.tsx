@@ -1,13 +1,13 @@
-import type { FieldValidation, PositionDetail } from "models/position";
-import { useEffect, useMemo, useState } from "react";
-import { colors } from "utils/colors";
-import { createChessboardSquares, getFastestPath, isPositionValid, reorderPosition } from "utils/helper";
 import { Chessboard } from "components/chessboard";
 import { PositionInput } from "components/positionInput";
-import type { Route } from "./+types/home";
-import { ChessboardService } from "services/chessboardService";
-import type { ChessboardPath, Graph } from "models/chessboard";
 import { SuccessButton } from "components/successButton";
+import type { Graph, Paths } from "models/chessboard";
+import type { FieldValidation, PositionDetail } from "models/position";
+import { useEffect, useMemo, useState } from "react";
+import { ChessboardService } from "services/chessboardService";
+import { colors } from "utils/colors";
+import { convertSecToMin, createChessboardSquares, getFastestPath, isPositionValid, reorderPosition } from "utils/helper";
+import type { Route } from "./+types/home";
 
 export function meta({ }: Route.MetaArgs) {
   return [
@@ -16,6 +16,7 @@ export function meta({ }: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const [chessboardPaths, setChessboardPaths] = useState<Paths[]>([]);
   const [myChessboard, setMyChessboard] = useState<PositionDetail[]>([]);
   const [dronePosition, setDronePosition] = useState<FieldValidation>({ value: '', error: false });
   const [objectPosition, setObjectPosition] = useState<FieldValidation>({ value: '', error: false });
@@ -75,7 +76,7 @@ export default function Home() {
     setMyChessboard([...tempChessboard]);
   }
 
-  function teste(positions: string[], color: string) {
+  function colorPath(positions: string[], color: string) {
     const tempChessboard = [...myChessboard];
 
     tempChessboard.forEach(piece => {
@@ -86,12 +87,18 @@ export default function Home() {
     setMyChessboard([...tempChessboard]);
   }
 
-  function restoreDefaultColor(color: string) {
+  function restoreDefaultColor(color?: string) {
     const tempChessboard = [...myChessboard];
-    tempChessboard.forEach(piece => {
-      if (piece.color === color)
-        piece.color = piece.defaultColor;
-    });
+
+    if (color) {
+      tempChessboard.forEach(piece => {
+        if (piece.color === color)
+          piece.color = piece.defaultColor;
+      });
+    }
+    else {
+      tempChessboard.forEach(piece => piece.color = piece.defaultColor);
+    }
 
     setMyChessboard([...tempChessboard]);
   }
@@ -121,31 +128,44 @@ export default function Home() {
         droneValue,
         objectValue);
 
-      const firstHalfSquaresToPaint = firstHalf!.path.filter(x => ![droneValue, objectValue].includes(x));
-      teste(firstHalfSquaresToPaint, colors.firstHalfPath);
-
       const secondHalf = getFastestPath(
         chessboardGraph,
         objectValue,
         deliveryValue);
 
-      const secondHalfSquaresToPaint = secondHalf!.path.filter(x => ![objectValue, deliveryValue].includes(x));
-      teste(secondHalfSquaresToPaint, colors.secondHalfPath);
-
-      const finalPath: ChessboardPath = {
-        path: [...firstHalf?.path!, ...secondHalf?.path!],
-        distance: firstHalf?.distance! + secondHalf?.distance!
+      const finalPath: Paths = {
+        firstPath: firstHalf?.path!,
+        secondPath: secondHalf?.path!,
+        totalDistance: firstHalf?.distance! + secondHalf?.distance!
       };
 
-      console.log('result', finalPath);
+      addToChessboardPaths(finalPath);
+      cleanInputs();
+      restoreDefaultColor();
     }
     catch (error) {
       alert(error);
     }
   }
 
+  function cleanInputs() {
+    setDronePosition({ value: '', error: false });
+    setObjectPosition({ value: '', error: false });
+    setDeliveryPosition({ value: '', error: false });
+  }
+
+  function addToChessboardPaths(path: Paths) {
+    const temp = [...chessboardPaths];
+    temp.unshift(path);
+
+    if (temp.length > 10)
+      temp.pop();
+
+    setChessboardPaths([...temp]);
+  }
+
   return (
-    <div className="uppercase mt-5 flex flex-col items-center gap-5">
+    <div className="uppercase p-5 flex flex-col items-center gap-5">
       <div className="flex flex-row items-center justify-center gap-20">
         <div className="flex flex-col gap-8">
           <PositionInput
@@ -191,6 +211,29 @@ export default function Home() {
         >
           Confirm route
         </SuccessButton>
+      </div>
+
+      <div className="w-full flex flex-col gap-2">
+        {
+          chessboardPaths.map(x => (
+            <div
+              key={x.firstPath.join() + x.secondPath.join()}
+              className="w-full border-gray-600 border-2 rounded-2xl p-5 text-center flex flex-col items-center gap-1 cursor-pointer"
+              onClick={() => { }}
+            >
+              <label>
+                Route time: {convertSecToMin(x.totalDistance)}
+                <label className="lowercase">min</label>
+              </label>
+              <label className={`${colors.firstHalfPath} text-black px-1 rounded-sm w-fit`}>
+                {x.firstPath.join(' -> ')}
+              </label>
+              <label className={`${colors.secondHalfPath} text-black px-1 rounded-sm w-fit`}>
+                {x.secondPath.join(' -> ')}
+              </label>
+            </div>
+          ))
+        }
       </div>
     </div>
   );
