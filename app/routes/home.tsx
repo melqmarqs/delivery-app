@@ -17,6 +17,7 @@ export function meta({ }: Route.MetaArgs) {
 
 export default function Home() {
   const [chessboardPaths, setChessboardPaths] = useState<Paths[]>([]);
+  const [selectedPath, setSelectedPath] = useState<string>('');
   const [myChessboard, setMyChessboard] = useState<PositionDetail[]>([]);
   const [dronePosition, setDronePosition] = useState<FieldValidation>({ value: '', error: false });
   const [objectPosition, setObjectPosition] = useState<FieldValidation>({ value: '', error: false });
@@ -32,6 +33,9 @@ export default function Home() {
   useEffect(() => {
     const tempChessboard = createChessboardSquares();
     setMyChessboard([...tempChessboard]);
+
+    const localStoragePaths = localStorage.getItem('paths');
+    localStoragePaths && setChessboardPaths([...JSON.parse(localStoragePaths) as Paths[]]);
   }, []);
 
   useEffect(() => {
@@ -97,7 +101,10 @@ export default function Home() {
       });
     }
     else {
-      tempChessboard.forEach(piece => piece.color = piece.defaultColor);
+      tempChessboard.forEach(piece => {
+        if (piece.color != piece.defaultColor)
+          piece.color = piece.defaultColor
+      });
     }
 
     setMyChessboard([...tempChessboard]);
@@ -126,17 +133,17 @@ export default function Home() {
       const firstHalf = getFastestPath(
         chessboardGraph,
         droneValue,
-        objectValue);
+        objectValue)!;
 
       const secondHalf = getFastestPath(
         chessboardGraph,
         objectValue,
-        deliveryValue);
+        deliveryValue)!;
 
       const finalPath: Paths = {
-        firstPath: firstHalf?.path!,
-        secondPath: secondHalf?.path!,
-        totalDistance: firstHalf?.distance! + secondHalf?.distance!
+        firstPath: { ...firstHalf },
+        secondPath: { ...secondHalf },
+        totalDistance: firstHalf.distance + secondHalf.distance
       };
 
       addToChessboardPaths(finalPath);
@@ -162,6 +169,11 @@ export default function Home() {
       temp.pop();
 
     setChessboardPaths([...temp]);
+    localStorage.setItem('paths', JSON.stringify(temp));
+  }
+
+  function isSelected(currentPath: Paths): boolean {
+    return selectedPath === `${currentPath.firstPath.path.join()}${currentPath.secondPath.path.join()}`
   }
 
   return (
@@ -217,19 +229,19 @@ export default function Home() {
         {
           chessboardPaths.map(x => (
             <div
-              key={x.firstPath.join() + x.secondPath.join()}
-              className="w-full border-gray-600 border-2 rounded-2xl p-5 text-center flex flex-col items-center gap-1 cursor-pointer"
-              onClick={() => { }}
+              key={x.firstPath.path.join() + x.secondPath.path.join()}
+              className={`w-full ${isSelected(x) ? 'border-white' : 'border-gray-600'} border-2 rounded-2xl p-5 text-center flex flex-col items-center gap-1 cursor-pointer`}
+              onClick={() => setSelectedPath(`${x.firstPath.path.join()}${x.secondPath.path.join()}`)}
             >
               <label>
                 Route time: {convertSecToMin(x.totalDistance)}
                 <label className="lowercase">min</label>
               </label>
               <label className={`${colors.firstHalfPath} text-black px-1 rounded-sm w-fit`}>
-                {x.firstPath.join(' -> ')}
+                {x.firstPath.path.join(' -> ')}
               </label>
               <label className={`${colors.secondHalfPath} text-black px-1 rounded-sm w-fit`}>
-                {x.secondPath.join(' -> ')}
+                {x.secondPath.path.join(' -> ')}
               </label>
             </div>
           ))

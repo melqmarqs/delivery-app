@@ -10,7 +10,7 @@ export interface ChessboardPath {
 }
 
 export interface Paths {
-  firstPath: string[];
-  secondPath: string[];
+  firstPath: ChessboardPath;
+  secondPath: ChessboardPath;
   totalDistance: number;
 }
