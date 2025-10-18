@@ -133,12 +133,12 @@ export default function Home() {
       const firstHalf = getFastestPath(
         chessboardGraph,
         droneValue,
-        objectValue)!;
+        objectValue);
 
       const secondHalf = getFastestPath(
         chessboardGraph,
         objectValue,
-        deliveryValue)!;
+        deliveryValue);
 
       const finalPath: Paths = {
         firstPath: { ...firstHalf },

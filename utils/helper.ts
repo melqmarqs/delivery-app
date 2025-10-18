@@ -46,7 +46,7 @@ export function reorderPosition(position: string): string {
   }
 }
 
-export function getFastestPath(graph: Graph, startingPoint: string, finalPoint: string): ChessboardPath | null {
+export function getFastestPath(graph: Graph, startingPoint: string, finalPoint: string): ChessboardPath {
   const distances: Record<string, number> = {};
   const visitedPoints: Record<string, string | null> = {};
   const nonvisitedPoints = new Set<string>(Object.keys(graph));
@@ -106,7 +106,7 @@ export function getFastestPath(graph: Graph, startingPoint: string, finalPoint: 
     };
   }
 
-  return null;
+  throw 'invalid position/route';
 }
 
 export function convertSecToMin(seconds: number): number {
