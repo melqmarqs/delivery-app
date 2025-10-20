@@ -20,5 +20,5 @@ docker build -t <name of the image> <location of the image>
 ```
 
 ```bash
-docker run -d -p 3000:3000 <name of the image> --name <container name>
+docker run -d -p 3000:3000 --name <container name> <name of the image>
 ```
