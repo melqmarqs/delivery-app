@@ -19,7 +19,7 @@ export function PositionInput(params: PositionInputParams) {
           enter the &nbsp;
           <label className={`text-xl font-bold ${params.color.textColor}`}>{params.title}</label>
         </label>
-        <label className={`${params.color.descriptionColor}`}>
+        <label className={`${params.color.descriptionColor} text-center`}>
           {params.description}
         </label>
       </div>

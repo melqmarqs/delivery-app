@@ -178,8 +178,8 @@ export default function Home() {
 
   return (
     <div className="uppercase p-5 flex flex-col items-center gap-5">
-      <div className="flex flex-row items-center justify-center gap-20">
-        <div className="flex flex-col gap-8">
+      <div className="flex md:flex-row flex-col items-center justify-center md:gap-20 gap-8">
+        <div className="flex flex-col md:gap-8 gap-3">
           <PositionInput
             title="drone position"
             value={dronePosition.value}
@@ -211,7 +211,7 @@ export default function Home() {
           />
         </div>
 
-        <div className="w-70 h-70">
+        <div className="w-70 h-70 flex justify-center">
           <Chessboard chessboardPositions={myChessboard} />
         </div>
       </div>
